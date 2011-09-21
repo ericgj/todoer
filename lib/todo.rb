@@ -50,9 +50,9 @@ class Todo
     @tasks << Task.new(task,categories)
   end
 
-  def sub(task, categories=[], tag=self.mark_done)
+  def sub(task, categories=[])
     task = Task.new(task,categories)
-    if tag then
+    if tag = self.mark_done then
       @tasks.select {|t| task == t}.each do |t|
         t.tag tag
       end
@@ -61,8 +61,9 @@ class Todo
     end
   end
 
+  # removes last added task, adds
   def change(task, categories=[])
-    sub task, categories, nil
+    @tasks.pop
     add task, categories
   end
    
