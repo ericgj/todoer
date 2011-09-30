@@ -1,3 +1,4 @@
+require 'date'
 
 module Todoer
 
@@ -8,12 +9,18 @@ module Todoer
     REGEXP_TAG = /\=(\w*)/
     REGEXP_NAME = /\@(\w+)/
     REGEXP_TIME = /\~(\d{1,2}[hm])(\d{1,2}m)?/
-    REGEXP_DATE = /(due|start|done|on)\s+([A-Za-z0-9\-\/]+)/
+    REGEXP_DATE = /(due|start|done|on)\s+([A-Za-z0-9\-\/]+)/i
+    REGEXP_DAY = /(due|start|done|on)\s+(mon|tue|wed|thu|fri|sat|sun|today|tomorrow)/i
     
     def tags; @tags ||= []; end
     def persons; @persons ||= []; end
     def dates; @dates ||= {}; end
     def time; @time ||= nil; end
+    
+    # note if you set this, day extractions will be relative to this
+    # instead of Date.today
+    attr_accessor :current_date
+    def current_date; @current_date ||= Date.today; end
     
     def extract_markup!
       extract_tags!
@@ -38,6 +45,7 @@ module Todoer
         end
         memo
       end
+      @dates.merge!(extract_dates_from_days!)
     end
     
     def extract_time!
@@ -54,6 +62,16 @@ module Todoer
       end
     end
       
+    def extract_dates_from_days!
+      days = extract_from_scan(REGEXP_DAY)
+      Hash[*days].inject({}) do |memo,(k,v)| 
+        if dt = next_date_for_day(v)
+          memo[k] = dt
+        end
+        memo
+      end    
+    end
+    
     private
     
     def extract_and_gsub!(rexp)
@@ -80,6 +98,24 @@ module Todoer
         extracts += $~[1..-1]
       end
       extracts
+    end
+    
+    def next_date_for_day(day)
+      day = day[0].upcase + day[1..-1].downcase
+      if day == 'Today'
+        return self.current_date
+      elsif day == 'Tomorrow'
+        return self.current_date + 1
+      else
+        day = day[0..2]  # note forgiving of day abbreviations
+        nday = Date::ABBR_DAYNAMES.index(day)
+        if nday
+          ntoday = self.current_date.wday
+          return self.current_date + ((nday - ntoday) % 7)
+        else
+          return nil
+        end
+      end
     end
     
   end

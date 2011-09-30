@@ -1,0 +1,37 @@
+#! /usr/bin/env ruby
+require File.expand_path('../lib/todoer',File.dirname(__FILE__))
+require 'rb-inotify'
+
+notif = INotify::Notifier.new
+
+Signal.trap("INT") { notif.stop; exit }
+
+modify_proc = lambda {
+  t = Todoer.parse('~/.todo')
+  system('clear')
+  puts "DUE OR OVERDUE", 
+       YAML.dump((t.due | t.overdue | t.on_today).map(&:name_with_dates))
+  puts
+  puts "DUE TOMORROW",
+       YAML.dump((t.due(Date.today + 1) | t.on(Date.today + 1)).map(&:name_with_dates))
+  puts
+  puts "NO DATE ASSIGNED",
+       YAML.dump(t.tasks.select {|t| t.dates.empty? }.map(&:name_with_dates))
+  puts
+  puts "TODO", 
+       t.flat_to_yaml
+
+}
+
+
+watch_proc = lambda {
+  notif.watch(File.expand_path('~/.todo'), :close_write) do 
+    modify_proc[] 
+    watch_proc[]
+  end
+}
+
+modify_proc[]
+watch_proc[]
+
+notif.run

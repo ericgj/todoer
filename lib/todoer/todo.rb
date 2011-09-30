@@ -20,8 +20,10 @@
 # task 'freelance general, take photo' matches the previous
 #      'freelance general, take photo with @elisa'
 #
-# The ~/.todo file itself is the product of a few simple bash programs.
+# The ~/.todo file itself is the product of a simple bash one-liners.
 #
+
+# Un-comment this line to run the basic usage tests at bottom:
 require File.expand_path('markup_string', File.dirname(__FILE__))
 
 require 'time'
@@ -50,18 +52,19 @@ module Todoer
       @tasks = []
       yield self if block_given?
       entries.sort_by(&:logtime).each do |e|
-        if e.add?; add e.task, e.categories; end
-        if e.sub?; sub e.task, e.categories; end
-        if e.change?; change e.task, e.categories; end
+        if e.add?; add e.task, e.logtime, e.categories; end
+        if e.sub?; sub e.task, e.logtime, e.categories; end
+        if e.change?; change e.task, e.logtime, e.categories; end
       end
     end
      
-    def add(task, categories=[])
-      @tasks << Task.new(task,categories)
+    def add(task, timestamp, categories=[])
+      @tasks << Task.new(task,timestamp,categories)
     end
 
-    def sub(task, categories=[])
-      task = Task.new(task,categories)
+    # TODO mark_done logic should be done in view, not here
+    def sub(task, timestamp, categories=[])
+      task = Task.new(task,timestamp,categories)
       if tag = self.mark_done then
         @tasks.select {|t| task == t}.each do |t|
           t.tag tag
@@ -72,11 +75,20 @@ module Todoer
     end
 
     # removes last added task, adds
-    def change(task, categories=[])
+    def change(task, timestamp, categories=[])
       @tasks.pop
-      add task, categories
+      add task, timestamp, categories
     end
      
+    # TODO genericize these to aggregate by any method of task
+    # by extending Array
+    def flat_aggregate(meth=nil)
+      tasks.inject(Hash.new {|h,k| h[k]=[]}) {|memo, task|
+        memo[task.categories.join(' ')] << (meth ? task.send(meth) : task)
+        memo
+      }
+    end
+    
     def aggregate(meth=nil)
       tasks.inject({}) {|memo,task|
         trav = memo
@@ -93,6 +105,24 @@ module Todoer
     end
     alias [] category
     
+    def due(dt=Date.today)
+      tasks.select {|t| t.due?(dt)}
+    end
+    
+    def overdue(dt=Date.today)
+      tasks.select {|t| t.overdue?(dt)}
+    end
+    
+    def on(dt=Date.today)
+      tasks.select {|t| t.on?(dt)}
+    end
+    alias on_today on
+    
+    # TODO move these to view class
+    def flat_to_yaml
+      YAML.dump(Hash[flat_aggregate(:name_with_tags).sort])
+    end
+    
     def to_yaml
       YAML.dump(aggregate(:name_with_tags))
     end
@@ -100,16 +130,17 @@ module Todoer
     class Task
       extend Forwardable
       
-      attr_reader :categories, :persons, :dates, :time
+      attr_reader :categories, :timestamp, :persons, :dates, :time
       attr_accessor :name
 
       def_delegators :@name, :persons, :dates, :time
       def tags; @tags + @name.tags; end
       
-       def initialize(task, categories=[])
-         @name, @categories = task, categories
+       def initialize(task, timestamp, categories=[])
+         @name, @timestamp, @categories = task, timestamp, categories
          @tags = Set.new
          @name.extend(Todoer::MarkupString)
+         @name.current_date = self.timestamp.to_date
          @name.extract_markup!
        end
 
@@ -126,6 +157,21 @@ module Todoer
          @tags << t
        end
        
+       def on?(dt=Date.today)
+        on = self.dates['on']
+        on and on == dt
+       end
+       
+       def due?(dt=Date.today)
+         due = self.dates['due']
+         due and due == dt
+       end
+       
+       def overdue?(dt=Date.today)
+         due = self.dates['due']
+         due and due < dt
+       end
+       
        # hacky, but how else?
        def inspect
          xtras  = [:tags, :persons, :dates, :time].inject({}) {|memo, meth|
@@ -137,9 +183,15 @@ module Todoer
          )
        end
        
+       # TODO move to view
        def name_with_tags
          "#{self.name}" +
           (self.tags.empty? ? "" : " (#{self.tags.to_a.join('; ')})")     
+       end
+       
+       def name_with_dates
+         "#{self.name}" +
+          (self.dates.empty? ? "" : " (#{self.dates.map {|h,k| "#{h} #{k}"}.join('; ')})")     
        end
        
        def ==(other)
@@ -179,11 +231,17 @@ if $0 == __FILE__
    # todo list where completed tasks are removed
    t = Todoer.parse('~/.todo')
    puts t.to_yaml
-   
+   puts
+   puts t.flat_to_yaml
+   puts
    puts t.tasks.inspect
+   puts
+   puts "Due or overdue", YAML.dump(t.due.map(&:name_with_dates))
    
    # todo list where completed tasks are tagged "done"
    t2 = Todoer.parse('~/.todo') {|todo| todo.mark_done = "done"}
    puts t2.to_yaml
-   
+   puts
+   puts t2.flat_to_yaml
 end
+
