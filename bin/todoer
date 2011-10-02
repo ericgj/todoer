@@ -1,26 +1,47 @@
 #! /usr/bin/env ruby
 require File.expand_path('../lib/todoer',File.dirname(__FILE__))
 require 'rb-inotify'
+require 'erubis'
+require 'tilt'
 
 notif = INotify::Notifier.new
 
 Signal.trap("INT") { notif.stop; exit }
 
+template = Tilt[:erubis].new {<<_____
+DUE OR OVERDUE
+<% (due | overdue | on_today).sort_by {|t| t.dates['due'] || t.dates['on']}.each do |task| %>
+-  <%= task %>
+<% end %>
+--------------------------------------------------------------------------------
+DUE TOMORROW
+<% (due(Date.today + 1) | on(Date.today + 1)).each do |task| %>
+-  <%= task %>
+<% end %>
+--------------------------------------------------------------------------------
+UNSCHEDULED
+<% (simple.tasks - simple.scheduled).each do |task| %>
+-  <%= task %>
+<% end %>
+--------------------------------------------------------------------------------
+
+BY CATEGORY
+<% simple.categories.sort.each do |cats, tasks| %>
+<%= cats.join(' ') %>:
+  <% tasks.each do |task| %>
+-  <%= task %>
+  <% end %>
+  
+<% end %>
+_____
+}
+
 modify_proc = lambda {
   t = Todoer.parse('~/.todo')
+  date = Todoer::DatePresenter.new( t )
+  simple = Todoer::Presenter.new( t )
   system('clear')
-  puts "DUE OR OVERDUE", 
-       YAML.dump((t.due | t.overdue | t.on_today).map(&:name_with_dates))
-  puts
-  puts "DUE TOMORROW",
-       YAML.dump((t.due(Date.today + 1) | t.on(Date.today + 1)).map(&:name_with_dates))
-  puts
-  puts "NO DATE ASSIGNED",
-       YAML.dump(t.tasks.select {|t| t.dates.empty? }.map(&:name_with_dates))
-  puts
-  puts "TODO", 
-       t.flat_to_yaml
-
+  puts template.render(date, {:simple => simple})
 }
 
 

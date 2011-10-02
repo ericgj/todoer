@@ -24,7 +24,7 @@
 #
 
 # Un-comment this line to run the basic usage tests at bottom:
-require File.expand_path('markup_string', File.dirname(__FILE__))
+#require File.expand_path('markup_string', File.dirname(__FILE__))
 
 require 'time'
 require 'yaml'
@@ -155,6 +155,14 @@ module Todoer
        
        def tag(t)
          @tags << t
+       end
+       
+       def scheduled?
+        !!self.dates['on'] || self.dates['due']
+       end
+       
+       def done?
+        tags.include?('done')
        end
        
        def on?(dt=Date.today)
