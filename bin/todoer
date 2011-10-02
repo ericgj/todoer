@@ -10,7 +10,7 @@ Signal.trap("INT") { notif.stop; exit }
 
 template = Tilt[:erubis].new {<<_____
 DUE OR OVERDUE
-<% (due | overdue | on_today).sort_by {|t| t.dates['due'] || t.dates['on']}.each do |task| %>
+<% (due | overdue | on_today).sort_by(&:scheduled_date).each do |task| %>
 -  <%= task %>
 <% end %>
 --------------------------------------------------------------------------------
