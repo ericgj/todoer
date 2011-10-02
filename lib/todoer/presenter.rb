@@ -90,6 +90,18 @@ module Todoer
     
   end
   
+  class TagPresenter < Presenter
+  
+    present_tasks do
+    
+      def to_s
+        self.name +
+        (self.tags.empty? ? "" : " (#{self.tags.to_a.join('; ')})")     
+      end
+      
+    end
+  end
+  
 end
   
 if $0 == __FILE__
