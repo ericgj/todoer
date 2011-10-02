@@ -20,7 +20,7 @@ DUE TOMORROW
 <% end %>
 --------------------------------------------------------------------------------
 UNSCHEDULED
-<% (simple.tasks - simple.scheduled).each do |task| %>
+<% (tasks - scheduled).each do |task| %>
 -  <%= task %>
 <% end %>
 --------------------------------------------------------------------------------
@@ -29,9 +29,8 @@ BY CATEGORY
 <% simple.categories.sort.each do |cats, tasks| %>
 <%= cats.join(' ') %>:
   <% tasks.each do |task| %>
--  <%= task %>
+  -  <%= task %>
   <% end %>
-  
 <% end %>
 _____
 }
@@ -40,8 +39,9 @@ modify_proc = lambda {
   t = Todoer.parse('~/.todo')
   date = Todoer::DatePresenter.new( t )
   simple = Todoer::Presenter.new( t )
+  categorized = Todoer::CategoryPresenter.new( t )
   system('clear')
-  puts template.render(date, {:simple => simple})
+  puts template.render(categorized, {:simple => simple})
 }
 
 

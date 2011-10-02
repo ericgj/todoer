@@ -75,7 +75,12 @@ module Todoer
     end
          
     def category(*cats)
-      tasks.select {|t| t.categories == cats}
+      if cats.last == '*'
+        cats.pop
+        tasks.select {|t| cats.empty? or t.categories[0...cats.size] == cats}
+      else
+        tasks.select {|t| t.categories == cats}
+      end
     end
     alias [] category
     

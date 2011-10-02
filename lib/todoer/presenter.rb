@@ -90,6 +90,19 @@ module Todoer
     
   end
   
+  class CategoryPresenter < Presenter
+  
+    present_tasks do
+      
+      def to_s
+        "(#{self.categories.join(' ')}) #{self.name}" +
+        (self.dates.empty? ? "" : " (#{self.dates.map {|h,k| "#{h} #{k}"}.join('; ')})")
+      end
+    
+    end
+  end
+  
+  
   class TagPresenter < Presenter
   
     present_tasks do
@@ -114,6 +127,7 @@ if $0 == __FILE__
   todo = Todoer.parse('~/.todo')
   date = Todoer::DatePresenter.new( todo )
   simple = Todoer::Presenter.new( todo )
+  categorized = Todoer::CategoryPresenter.new( todo )
   
   template = Tilt[:erubis]
   
@@ -140,6 +154,6 @@ TODO
   
 _____
   
-  }.render(date, {:simple => simple})
+  }.render(categorized, {:simple => simple})
   
 end
