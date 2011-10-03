@@ -6,6 +6,7 @@ My key requirements, as a user sick of overly complex todo lists, were
 - the syntax should be as close to simply writing a note to yourself as possible
 - it has to be easy to add or remove something from a todo list wherever you are in the filesystem
 - it should be easy to add or remove a task based on previous tasks added
+- it should have an intuitive and unobtrusive markup format for specifying tags, persons involved the task, dates, and time estimates, directly in the task description
 - it should _not_ encourage you to move around, recategorize, tag, or make pretty tasks or otherwise spend your time working on the list rather than on the things you have to do.
 - it _should_ however be very easy to change the due date of a task or change its status (done, etc.) 
 
@@ -61,3 +62,27 @@ etc....
 
 It's not rocket science and I've taken ideas from others, but it could be useful. I'm especially happy about the autocompletion, which is such a timesaver. Also it gave me a chance to struggle with bash which I've been wanting to do.
 
+### Markup format
+
+#### Persons: 
+
+    ++ personal, call @mom about @bob proposed dates
+    
+#### Tags: 
+
+    ++ school, draft =website assignment
+
+As opposed to task _categories_, tags are for cross-cutting concerns.
+
+_Note that I used `=` instead of the twitter `#` convention, mainly because # often has special meaning in other languages (YAML in particular, which I was originally using to display the todo lists)_
+
+    
+#### Time estimates: 
+
+    ++ personal, give haircut to @riley ~45m
+    
+#### Dates: 
+
+    ++ freelance project-x, mockups due 7-Oct-2011 start tue 
+    
+Note these don't have a special markup, they are just parsed out of the plain English. Relative days are assumed to refer to the _next date from when the task was created_. Date formats are anything that can be Date.parse'd.
