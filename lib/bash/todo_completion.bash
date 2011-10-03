@@ -1,3 +1,5 @@
+# move to /etc/bash_completion.d/todo
+
 _todo()
   { 
     local cur words 
