@@ -52,7 +52,7 @@ Then I wrote a little Ruby program to parse this and output in various ways.
 
 So with these building blocks you could easily do something like 
 
-- set a directory watcher on the .todo file and automatically redisplay a current todo list as it's edited (see example below)
+- set a directory watcher on the .todo file and automatically redisplay a current todo list as it's edited (see example in `bin/todoer`)
 - serve up the .todo file through a web app and provide a GUI for adding tasks
 - stream it to loggly or PubSubHubbub it
 - parse it into commands to send to your arduino-controlled personal robot over IRC
