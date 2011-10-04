@@ -45,13 +45,13 @@ module Todoer
       new *lines.map {|line| LogEntry.parse(line) }.compact, &config
     end
     
-    def tasks; @tasks = QueryCollection(@_tasks); end
+    attr_accessor :tasks
     
     # todo.mark_done = 'done'   #>> deleted tasks are instead tagged 'done'
     attr_accessor :mark_done
     
     def initialize(*entries)
-      @_tasks = []
+      @tasks = []
       yield self if block_given?
       entries.sort_by(&:logtime).each do |e|
         if e.add?; add e.task, e.logtime, e.categories; end
@@ -60,73 +60,25 @@ module Todoer
     end
      
     def add(task, timestamp, categories=[])
-      @_tasks << Task.new(task,timestamp,categories)
+      @tasks << Task.new(task,timestamp,categories)
     end
 
     def sub(task, timestamp, categories=[])
       task = Task.new(task,timestamp,categories)
       if tag = self.mark_done then
-        @_tasks.select {|t| task == t}.each do |t|
-          t.tag tag
+        @tasks.select {|t| task == t}.each do |t|
+          t.tag! tag
         end
       else
-        @_tasks.delete_if {|t| task == t}
+        @tasks.delete_if {|t| task == t}
       end
     end
          
     def category(*cats)
-      if cats.last == '*'
-        cats.pop
-        tasks.select {|t| cats.empty? or t.categories[0...cats.size] == cats}
-      else
-        tasks.select {|t| t.categories == cats}
-      end
+      tasks.select {|t| cats.categories_like?(*cats)}
     end
     alias [] category
     
-#    def scheduled
-#      tasks.select {|t| t.scheduled? }
-#    end
-#    
-#    def done
-#      tasks.select {|t| t.done?}
-#    end
-#    
-#    def due(dt=Date.today)
-#      tasks.select {|t| t.due?(dt)}
-#    end
-#    
-#    def overdue(dt=Date.today)
-#      tasks.select {|t| t.overdue?(dt)}
-#    end
-#    
-#    def on(dt=Date.today)
-#      tasks.select {|t| t.on?(dt)}
-#    end
-#    
-#    def on_today; on; end
-#    
-#    def started
-#      tasks.select {|t| t.started?}
-#    end
-    
-    def categories
-      tasks.inject(Hash.new {|h,k| h[k]=[]}) {|memo, task|
-        memo[task.categories] << task
-        memo
-      }
-    end
-    
-    def aggregate_categories
-      tasks.inject({}) {|memo,task|
-        trav = memo
-        task.categories.each do |cat| 
-          trav = ( trav[cat] ||= {} )
-        end
-        (trav['tasks'] ||= []) << task
-        memo
-      }
-    end
     
     class Task
       extend Forwardable
@@ -137,77 +89,91 @@ module Todoer
       def_delegators :@name, :persons, :dates, :time
       def tags; @tags + @name.tags; end
       
-       def initialize(task, timestamp, categories=[])
-         @name, @timestamp, @categories = task, timestamp, categories
-         @tags = Set.new
-         @name.extend(Todoer::MarkupString)
-         @name.current_date = self.timestamp.to_date
-         @name.extract_markup!
-       end
+      def initialize(task, timestamp, categories=[])
+        @name, @timestamp, @categories = task, timestamp, categories
+        @tags = Set.new
+        @name.extend(Todoer::MarkupString)
+        @name.current_date = self.timestamp.to_date
+        @name.extract_markup!
+      end
 
-       def recategorize(*cats)
-         @categories = cats
-       end
+      def recategorize!(*cats)
+        @categories = cats
+      end
        
-       def categorize(cat)
-         @categories.pop
-         @categories << cat
-       end
+      def categorize!(cat)
+        @categories.pop
+        @categories << cat
+      end
        
-       def tag(t)
-         @tags << t
-       end
+      def tag!(t)
+        @tags << t
+      end
        
-       def due_date; self.dates['due']; end
-       def on_date; self.dates['on']; end
-       def start_date; self.dates['start']; end
-       def done_date; self.dates['done']; end
-       def scheduled_date; due_date || on_date; end
+      def categories_like?(*cats)
+        if cats.last == '*'
+          cats_d = cats.dup; cats_d.pop
+          cats_d.empty? or categories[0...cats_d.size] == cats_d
+        else
+          categories == cats
+        end          
+      end
        
-       def scheduled?
+      def due_date; self.dates['due']; end
+      def on_date; self.dates['on']; end
+      def start_date; self.dates['start']; end
+      def done_date; self.dates['done']; end
+      def scheduled_date; due_date || on_date; end
+
+      def scheduled?
         !!self.dates['on'] || self.dates['due']
-       end
-       
-       def done?
+      end
+
+      def done?
         tags.include?('done')
-       end
-       
-       def on?(dt=Date.today)
+      end
+
+      def on?(dt=Date.today)
         on = self.dates['on']
         on and on == dt
-       end
-       
-       def due?(dt=Date.today)
-         due = self.dates['due']
-         due and due == dt
-       end
-       
-       def overdue?(dt=Date.today)
-         due = self.dates['due']
-         due and due < dt
-       end
-             
-       def started?
+      end      
+      def on_today?; self.on?; end
+      def on_tomorrow?; self.on?(Date.today + 1); end
+
+      def due?(dt=Date.today)
+        due = self.dates['due']
+        due and due == dt
+      end
+      def due_today?; self.due?; end
+      def due_tomorrow?; self.due?(Date.today + 1); end
+
+      def overdue?(dt=Date.today)
+        due = self.dates['due']
+        due and due < dt
+      end
+           
+      def started?
         !!self.dates['start']
-       end
-       
-       def to_s; self.name; end
-       
-       # hacky, but how else?
-       def inspect
-         xtras  = [:tags, :persons, :dates, :time].inject({}) {|memo, meth|
+      end
+
+      def to_s; self.name; end
+
+      # hacky, but how else?
+      def inspect
+        xtras  = [:tags, :persons, :dates, :time].inject({}) {|memo, meth|
           memo[meth] = self.send(meth).inspect
           memo
-         }       
-         super.gsub(/>$/, 
-           ', ' + xtras.map {|h,k| "(delegated) #{h}=#{k}"}.join(', ') + '>'
-         )
-       end
-       
-       def ==(other)
-         (self.categories == other.categories) and
-         (/^#{self.name}/ =~ other.name)
-       end
+        }       
+        super.gsub(/>$/, 
+          ', ' + xtras.map {|h,k| "(delegated) #{h}=#{k}"}.join(', ') + '>'
+        )
+      end
+
+      def ==(other)
+        (self.categories == other.categories) and
+        (/^#{self.name}/ =~ other.name)
+      end
+      
     end
 
     class LogEntry

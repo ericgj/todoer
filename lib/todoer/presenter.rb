@@ -1,150 +1,120 @@
+# uncomment to run tests at bottom
+#require File.expand_path('query_collection',File.dirname(__FILE__))
 
 module Todoer
 
-  class Presenter
-    
+  class Presenter < QueryCollection
+  
     class << self
-      
-      def presenters
-        @presenters ||= Module.new {
-          def to_s
-            name
+
+      def presenter_module
+        @presenter_module ||= Module.new {
+        
+          def %(fmtstr)
+          end
+          
+          def with_categories_and_scheduled_date(fmt='%Y-%m-%d')
+            "(#{categories_string}) #{self}" + 
+            (self.scheduled? ? " (schd #{self.scheduled_date.strftime(fmt)})" : "")
+          end
+          
+          def with_categories
+            "(#{categories_string}) #{self}"
+          end
+          
+          def with_dates(fmt='%Y-%m-%d')
+            "#{self}" + 
+            self.dates.empty? ? "" : " (#{dates_string(fmt)})"
+          end
+          
+          def with_scheduled_date(fmt='%Y-%m-%d')
+            "#{self}" + 
+            self.scheduled? ? " (schd #{self.scheduled_date.strftime(fmt)})" : ""
+          end
+
+          def categories_string(delim=' ')
+            self.categories.join(delim)
+          end
+          
+          def tags_string(delim=' ')
+            self.tags.join(delim)
+          end
+          
+          def dates_string(fmt='%Y-%m-%d')
+            self.dates.map {|h,k| "#{h} #{k.strftime(fmt)}"}.join('; ')
           end
         }
       end
-      
-      def present_tasks(&blk)
-        @presenters = Module.new(&blk)
+
+      def presentations(&blk)
+        @presenter_module = Module.new(&blk)
       end
-      
-    end
-    
+
+    end   
+
     def initialize(todo)
-      @todo = todo
+      super todo.tasks
     end
     
-    def tasks
-      @tasks ||= @todo.tasks.each(&self.method(:extend_task))
+    def each
+      super do |t| yield t.extend(self.class.presenter_module) end
     end
-      
-    def scheduled
-      tasks.select {|t| t.scheduled? }
-    end
-    
-    def done
-      tasks.select {|t| t.done?}
-    end
-    
-    def due(dt=Date.today)
-      tasks.select {|t| t.due?(dt)}
-    end
-    
-    def overdue(dt=Date.today)
-      tasks.select {|t| t.overdue?(dt)}
-    end
-    
-    def on(dt=Date.today)
-      tasks.select {|t| t.on?(dt)}
-    end
-    
-    def on_today; on; end
-    
+
     def categories
-      tasks.inject(Hash.new {|h,k| h[k]=[]}) {|memo, task|
-        memo[task.categories] << extend_task(task)
+      all.inject(Hash.new {|h,k| h[k]=[]}) {|memo, task|
+        memo[task.categories] << task
         memo
       }
     end
     
     def aggregate_categories
-      tasks.inject({}) {|memo,task|
+      all.inject({}) {|memo,task|
         trav = memo
         task.categories.each do |cat| 
           trav = ( trav[cat] ||= {} )
         end
-        (trav['tasks'] ||= []) << extend_task(task)
+        (trav['tasks'] ||= []) << task
         memo
       }
     end
     
-    private
-    
-    def extend_task(task)
-      task.extend(self.class.presenters)
-      task
-    end
-    
-  end
-  
-  
-  class DatePresenter < Presenter
-    
-    present_tasks do
-      
-      def to_s
-        self.name +
-        (self.dates.empty? ? "" : " (#{self.dates.map {|h,k| "#{h} #{k}"}.join('; ')})")
-      end
-      
-    end
-    
-  end
-  
-  class CategoryPresenter < Presenter
-  
-    present_tasks do
-      
-      def to_s
-        "(#{self.categories.join(' ')}) #{self.name}" +
-        (self.dates.empty? ? "" : " (#{self.dates.map {|h,k| "#{h} #{k}"}.join('; ')})")
-      end
-    
-    end
-  end
-  
-  
-  class TagPresenter < Presenter
-  
-    present_tasks do
-    
-      def to_s
-        self.name +
-        (self.tags.empty? ? "" : " (#{self.tags.to_a.join('; ')})")     
-      end
-      
-    end
   end
   
 end
-  
+
+
 if $0 == __FILE__
 
+  require File.expand_path('markup_string',File.dirname(__FILE__))
   require File.expand_path('todo',File.dirname(__FILE__))
 
   require 'erubis'
   require 'tilt'
   
   todo = Todoer.parse('~/.todo')
-  date = Todoer::DatePresenter.new( todo )
-  simple = Todoer::Presenter.new( todo )
-  categorized = Todoer::CategoryPresenter.new( todo )
+  presenter = Todoer::Presenter.new(todo)
   
-  template = Tilt[:erubis]
+  erb = Tilt[:erubis]
   
-  puts template.new { <<_____
+  puts erb.new { <<_____
   
 DUE OR OVERDUE
-<% (due | overdue | on_today).each do |task| %>
--  <%= task %>
+<% (where(&:due?).or(&:overdue?).or(&:on_today?)).each do |task| %>
+-  <%= task.with_categories_and_scheduled_date %> 
 <% end %>
 
 DUE TOMORROW
-<% (due(Date.today + 1) | on(Date.today + 1)).each do |task| %>
--  <%= task %>
+<% (where(&:due_tomorrow?).or(&:on_tomorrow?)).each do |task| %>
+-  <%= task.with_categories_and_scheduled_date %>
+<% end %>
+
+UNSCHEDULED
+<% (where(:not, &:scheduled?)).each do |task| %>
+-  <%= task.with_categories %>
 <% end %>
 
 TODO
-<% simple.categories.each do |cats, tasks| %>
+<% where.categories.each do |cats, tasks| %>
 <%= cats.join(' ') %>:
   <% tasks.each do |task| %>
 -  <%= task %>
@@ -154,6 +124,6 @@ TODO
   
 _____
   
-  }.render(categorized, {:simple => simple})
+  }.render(presenter)
   
 end

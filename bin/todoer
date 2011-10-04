@@ -10,38 +10,35 @@ Signal.trap("INT") { notif.stop; exit }
 
 template = Tilt[:erubis].new {<<_____
 DUE OR OVERDUE
-<% (due | overdue | on_today).sort_by(&:scheduled_date).each do |task| %>
--  <%= task %>
+<% (where(&:due?).or(&:overdue?).or(&:on_today?)).each do |task| %>
+-  <%= task.with_categories_and_scheduled_date %> 
 <% end %>
 --------------------------------------------------------------------------------
 DUE TOMORROW
-<% (due(Date.today + 1) | on(Date.today + 1)).each do |task| %>
--  <%= task %>
+<% (where(&:due_tomorrow?).or(&:on_tomorrow?)).each do |task| %>
+-  <%= task.with_categories_and_scheduled_date %>
 <% end %>
 --------------------------------------------------------------------------------
 UNSCHEDULED
-<% (tasks - scheduled).each do |task| %>
--  <%= task %>
+<% (where(:not, &:scheduled?)).each do |task| %>
+-  <%= task.with_categories %>
 <% end %>
 --------------------------------------------------------------------------------
-
 BY CATEGORY
-<% simple.categories.sort.each do |cats, tasks| %>
+<% where.categories.each do |cats, tasks| %>
 <%= cats.join(' ') %>:
   <% tasks.each do |task| %>
-  -  <%= task %>
-  <% end %>
+-  <%= task %>
+  <% end %>  
 <% end %>
 _____
 }
 
 modify_proc = lambda {
   t = Todoer.parse('~/.todo')
-  date = Todoer::DatePresenter.new( t )
-  simple = Todoer::Presenter.new( t )
-  categorized = Todoer::CategoryPresenter.new( t )
+  presenter = Todoer::Presenter.new( t )
   system('clear')
-  puts template.render(categorized, {:simple => simple})
+  puts template.render(presenter)
 }
 
 
