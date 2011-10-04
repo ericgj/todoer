@@ -33,8 +33,6 @@ BY CATEGORY
 -  <%= task %>
   <% end %>  
 <% end %>
-
-
 <%= ('Showing: ' + ARGV.join(' ')).rjust(80) %>
 _____
 }

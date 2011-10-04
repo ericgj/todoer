@@ -1,0 +1,5 @@
+# sed -r -n 's/^+.*hacking todoer,s(.*)$/- 1/p' > TODO
+- Rethink how markup is or isnt taken out of string
+- Add syntax for event date/times in strings
+- Add template for weekly sched/todo list
+- Add utility to compress .todo file

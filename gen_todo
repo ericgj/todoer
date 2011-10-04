@@ -1,0 +1,5 @@
+#! /usr/bin/env bash
+trap 'prev_cmd=$this_cmd; this_cmd=$BASH_COMMAND' DEBUG
+cat ~/.todo | sed -r -n 's/^\+.*hacking todoer\,\s(.*)$/- \1/p' > TODO
+sed -i "1 i# $prev_cmd" TODO
+
