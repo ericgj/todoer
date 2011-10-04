@@ -45,13 +45,13 @@ module Todoer
       new *lines.map {|line| LogEntry.parse(line) }.compact, &config
     end
     
-    attr_reader :tasks
+    def tasks; @tasks = QueryCollection(@_tasks); end
     
     # todo.mark_done = 'done'   #>> deleted tasks are instead tagged 'done'
     attr_accessor :mark_done
     
     def initialize(*entries)
-      @tasks = []
+      @_tasks = []
       yield self if block_given?
       entries.sort_by(&:logtime).each do |e|
         if e.add?; add e.task, e.logtime, e.categories; end
@@ -60,17 +60,17 @@ module Todoer
     end
      
     def add(task, timestamp, categories=[])
-      @tasks << Task.new(task,timestamp,categories)
+      @_tasks << Task.new(task,timestamp,categories)
     end
 
     def sub(task, timestamp, categories=[])
       task = Task.new(task,timestamp,categories)
       if tag = self.mark_done then
-        @tasks.select {|t| task == t}.each do |t|
+        @_tasks.select {|t| task == t}.each do |t|
           t.tag tag
         end
       else
-        @tasks.delete_if {|t| task == t}
+        @_tasks.delete_if {|t| task == t}
       end
     end
          
@@ -84,6 +84,49 @@ module Todoer
     end
     alias [] category
     
+#    def scheduled
+#      tasks.select {|t| t.scheduled? }
+#    end
+#    
+#    def done
+#      tasks.select {|t| t.done?}
+#    end
+#    
+#    def due(dt=Date.today)
+#      tasks.select {|t| t.due?(dt)}
+#    end
+#    
+#    def overdue(dt=Date.today)
+#      tasks.select {|t| t.overdue?(dt)}
+#    end
+#    
+#    def on(dt=Date.today)
+#      tasks.select {|t| t.on?(dt)}
+#    end
+#    
+#    def on_today; on; end
+#    
+#    def started
+#      tasks.select {|t| t.started?}
+#    end
+    
+    def categories
+      tasks.inject(Hash.new {|h,k| h[k]=[]}) {|memo, task|
+        memo[task.categories] << task
+        memo
+      }
+    end
+    
+    def aggregate_categories
+      tasks.inject({}) {|memo,task|
+        trav = memo
+        task.categories.each do |cat| 
+          trav = ( trav[cat] ||= {} )
+        end
+        (trav['tasks'] ||= []) << task
+        memo
+      }
+    end
     
     class Task
       extend Forwardable
@@ -143,6 +186,12 @@ module Todoer
          due = self.dates['due']
          due and due < dt
        end
+             
+       def started?
+        !!self.dates['start']
+       end
+       
+       def to_s; self.name; end
        
        # hacky, but how else?
        def inspect
@@ -154,7 +203,7 @@ module Todoer
            ', ' + xtras.map {|h,k| "(delegated) #{h}=#{k}"}.join(', ') + '>'
          )
        end
-              
+       
        def ==(other)
          (self.categories == other.categories) and
          (/^#{self.name}/ =~ other.name)
