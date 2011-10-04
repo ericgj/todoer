@@ -75,7 +75,7 @@ module Todoer
     end
          
     def category(*cats)
-      tasks.select {|t| cats.categories_like?(*cats)}
+      tasks.select {|t| t.categories_like?(*cats)}
     end
     alias [] category
     
