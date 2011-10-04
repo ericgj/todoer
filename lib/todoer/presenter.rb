@@ -60,6 +60,10 @@ module Todoer
       super do |t| yield t.extend(self.class.presenter_module) end
     end
 
+    def [](*cats)
+      self.and {|t| t.categories_like?(*cats)}
+    end
+    
     def categories
       all.inject(Hash.new {|h,k| h[k]=[]}) {|memo, task|
         memo[task.categories] << task

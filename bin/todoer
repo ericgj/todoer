@@ -4,33 +4,38 @@ require 'rb-inotify'
 require 'erubis'
 require 'tilt'
 
+ARGV.push '*'
+
 notif = INotify::Notifier.new
 
 Signal.trap("INT") { notif.stop; exit }
 
 template = Tilt[:erubis].new {<<_____
 DUE OR OVERDUE
-<% (where(&:due?).or(&:overdue?).or(&:on_today?)).each do |task| %>
+<% (where(&:due?).or(&:overdue?).or(&:on_today?)[*ARGV]).sort_by(&:scheduled_date).each do |task| %>
 -  <%= task.with_categories_and_scheduled_date %> 
 <% end %>
 --------------------------------------------------------------------------------
 DUE TOMORROW
-<% (where(&:due_tomorrow?).or(&:on_tomorrow?)).each do |task| %>
+<% (where(&:due_tomorrow?).or(&:on_tomorrow?)[*ARGV]).each do |task| %>
 -  <%= task.with_categories_and_scheduled_date %>
 <% end %>
 --------------------------------------------------------------------------------
 UNSCHEDULED
-<% (where(:not, &:scheduled?)).each do |task| %>
+<% (where(:not, &:scheduled?)[*ARGV]).each do |task| %>
 -  <%= task.with_categories %>
 <% end %>
 --------------------------------------------------------------------------------
 BY CATEGORY
-<% where.categories.each do |cats, tasks| %>
+<% where[*ARGV].categories.sort.each do |cats, tasks| %>
 <%= cats.join(' ') %>:
   <% tasks.each do |task| %>
 -  <%= task %>
   <% end %>  
 <% end %>
+
+
+<%= ('Showing: ' + ARGV.join(' ')).rjust(80) %>
 _____
 }
 

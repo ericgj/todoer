@@ -123,7 +123,7 @@ module Todoer
       def on_date; self.dates['on']; end
       def start_date; self.dates['start']; end
       def done_date; self.dates['done']; end
-      def scheduled_date; due_date || on_date; end
+      def scheduled_date; on_date || due_date; end
 
       def scheduled?
         !!self.dates['on'] || self.dates['due']
