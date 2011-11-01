@@ -172,7 +172,7 @@ module Todoer
 
       def ==(other)
         (self.categories == other.categories) and
-        (/^#{self.name}/ =~ other.name)
+        (/^#{Regexp.escape(self.name)}/ =~ other.name)
       end
       
     end
