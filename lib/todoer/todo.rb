@@ -149,7 +149,8 @@ module Todoer
 
       def overdue?(dt=Date.today)
         due = self.dates['due']
-        due and due < dt
+        on = self.dates['on']
+        (due and due < dt) or (on and on < dt)
       end
            
       def started?
