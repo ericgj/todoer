@@ -33,51 +33,89 @@ require 'forwardable'
 
 module Todoer
 
+  #@deprecated
   def self.parse(file, &config)
+    warn "Todoer.parse is deprecated. Use Todoer.load with adapters instead"
     lines = []
     File.open(File.expand_path(file)) {|f| lines = f.readlines }
     Todo.parse lines, &config
   end
   
   class Todo
+    include Enumerable
     
+    #@deprecated
     def self.parse(lines, &config)
-      new *lines.map {|line| LogEntry.parse(line) }.compact, &config
+      warn "Todo.parse is deprecated. Use Adapters::Todo instead"
+      new *lines.map {|line| Todoer::LogEntry.parse(line) }.compact, &config
     end
-    
-    attr_accessor :tasks
     
     # todo.mark_done = 'done'   #>> deleted tasks are instead tagged 'done'
     attr_accessor :mark_done
     
-    def initialize(*entries)
-      @tasks = []
-      yield self if block_given?
-      entries.sort_by(&:logtime).each do |e|
-        if e.add?; add e.task, e.logtime, e.categories; end
-        if e.sub?; sub e.task, e.logtime, e.categories; end
+    def initialize(*new_entries)
+      warn "Todo.new with block is deprecated. Use Todoer.configure instead" if block_given?
+      yield self if block_given?    # really don't need this; use tap
+      self.push *new_entries
+    end
+    
+    def <<(entry)
+      reset_cache; self.entries << entry
+    end
+      
+    def push(*new_entries)
+      reset_cache; self.entries.push(*new_entries)
+    end
+    
+    
+    def each(&blk)
+      tasks.each(&blk)
+    end
+    alias each_task each
+    
+    def tasks
+      return @tasks if @tasks
+      self.entries.sort_by(&:logtime).each do |e|
+        if e.add?; add_task e.task, e.logtime, e.categories; end
+        if e.sub?; sub_task e.task, e.logtime, e.categories; end
       end
+      @tasks
     end
-     
-    def add(task, timestamp, categories=[])
-      @tasks << Task.new(task,timestamp,categories)
+    
+    def tasks!
+      reset_cache; self.tasks
     end
-
-    def sub(task, timestamp, categories=[])
-      task = Task.new(task,timestamp,categories)
-      if tag = self.mark_done then
-        @tasks.select {|t| task == t}.each do |t|
-          t.tag! tag
-        end
-      else
-        @tasks.delete_if {|t| task == t}
-      end
-    end
-         
+    
     def category(*cats)
       tasks.select {|t| t.categories_like?(*cats)}
     end
     alias [] category
+    
+    # probably should be private
+    def add_task(task, timestamp, categories=[])
+      (@tasks ||= []) << Task.new(task,timestamp,categories)
+    end
+
+    # probably should be private
+    def sub_task(task, timestamp, categories=[])
+      task = Task.new(task,timestamp,categories)
+      if tag = self.mark_done then
+        (@tasks ||= []).select {|t| task == t}.each do |t|
+          t.tag! tag
+        end
+      else
+        (@tasks ||= []).delete_if {|t| task == t}
+      end
+    end
+         
+    #TODO
+    def compact
+    end
+    
+    private
+    
+    def entries; @entries ||= []; end
+    def reset_cache; @tasks = nil; end
     
     
     class Task
@@ -175,26 +213,6 @@ module Todoer
         (/^#{Regexp.escape(self.name)}/ =~ other.name)
       end
       
-    end
-
-    class LogEntry
-      attr_reader :action, :logtime, :task, :categories
-
-      def self.parse(line)
-        return unless /^(\+|\-|\*)\s\[(.*)\]\s([^,]+),\s*(.*)$/ =~ line
-        new $1, $2, $3, $4
-      end
-
-      def initialize(action,logtime,categories,task)
-        @action = action
-        @logtime = Time.parse(logtime)
-        @categories = categories.split(' ')
-        @task = task
-      end
-      
-      def add?; @action == '+'; end
-      def sub?; @action == '-'; end
-
     end
 
   end

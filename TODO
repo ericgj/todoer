@@ -3,3 +3,4 @@
 - Add template for weekly sched/todo list 
 - Add syntax for event date/times in strings 
 - Rethink how markup is or isnt taken out of string 
+- Rethink relationship of ~/.todo to project-specific todo's
