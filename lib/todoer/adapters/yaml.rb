@@ -10,6 +10,7 @@ module Todoer
       def initialize(file, opts={})
         @categories = opts.delete(:categories) || []
         @categories = [@categories] if String === @categories || Symbol === @categories
+        @categories.map! {|cat| cat.to_s}
         @file, @opts = file, opts
       end
       

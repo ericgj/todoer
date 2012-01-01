@@ -1,6 +1,10 @@
-# ./gen_todo.rb
-- Add utility to compress .todo file 
+Next:
+- Decentralize ~/.todo to allow project-specific todo's as well
+- Add adapters for YAML todo files
+- Draft CLI
 - Add template for weekly sched/todo list 
+
+Deferred:
+- Add utility to compress .todo file 
 - Add syntax for event date/times in strings 
 - Rethink how markup is or isnt taken out of string 
-- Rethink relationship of ~/.todo to project-specific todo's
