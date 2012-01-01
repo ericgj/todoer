@@ -8,13 +8,16 @@ module Todoer
       class List
       
         DEFAULT_TEMPLATE = <<-_____
+---
+<%= 'Showing: ' + ARGV.join(' ') %>
+<%= (["Sources:"] + Todoer.sources).join("\n-  ") %> 
+---
 <% where[*ARGV].categories.sort.each do |(cats, tasks)| %>
 <%= cats.join(' ') %>:
   <% tasks.each do |task| %>
 -  <%= task %>
   <% end %>  
 <% end %>
-<%= ('Showing: ' + ARGV.join(' ')).rjust(80) %>
 _____
 
         def presenter

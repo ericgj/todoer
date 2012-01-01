@@ -11,6 +11,7 @@ module Todoer
     
     def default_adapter; @default_adapter ||= :yaml; end    
     def todo; @todo ||= Todo.new; end
+    def sources; @sources ||= []; end
     
     def configure
       yield todo
@@ -35,10 +36,11 @@ module Todoer
       end.new(file, opts).each do |entry|
         self.todo << entry
       end
+      sources << file
     end
     
     def reset
-      @todo = nil
+      @todo = nil; @sources = nil
     end
     
     def adapter_for(file, adapter=nil)

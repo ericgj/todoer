@@ -1,3 +1,5 @@
+require 'fileutils'
+
 Dir[File.expand_path('commands/*',File.dirname(__FILE__))].each do |f|
   require f
 end
@@ -12,7 +14,7 @@ module Todoer
     def self.command(cmd, opts)
       Commands.const_get(cmd.to_s.capitalize).new(environment(opts))
     rescue NameError
-      raise ArgumentError, "Command '#{cmd}' not defined"
+      raise NameError, "Unknown command '#{cmd}'"
     end
     
     def self.environment(opts)
@@ -25,20 +27,29 @@ module Todoer
   # and control read/writes to projects-list file
   class Environment
 
-    DEFAULT_GLOBAL_TODO   = '~/.todo'
+    DEFAULT_GLOBAL_TODO   = '~/.todo/.todo'
     DEFAULT_PROJECTS_LIST = '~/.todo/projects.yaml'
     
     class << self
       attr_reader :settings
-      def settings; 
+      def settings
         @settings ||= {:global_todo   => self::DEFAULT_GLOBAL_TODO,
                        :projects_list => self::DEFAULT_PROJECTS_LIST
                       }
       end
+      
+      def blank
+        new 
+      end
+      
     end
     
-    def global_todo;   self.class.settings[:global_todo];   end
-    def projects_list; self.class.settings[:projects_list]; end
+    def global_todo
+      File.expand_path(self.class.settings[:global_todo])
+    end
+    def projects_list
+      File.expand_path(self.class.settings[:projects_list])
+    end
     
     def sources
       return @sources if @sources
@@ -62,27 +73,31 @@ module Todoer
     end
     
     def all_projects
-      name = projects_list
-      if File.exists?(name)
-        parse_projects(name)
-      else
-        {}
-      end
+      parse_projects || {}
     end
     
     def project(proj)
       all_projects.fetch(proj.to_sym, File.expand_path(proj, Dir.pwd))
     end
     
-    def initialize(opts)
+    def initialize(opts={})
       init_settings
-      @all, @global, @projects, @projects_given = 
-        opts[:all], opts[:global], opts[:project], !opts[:project].empty?
+      @all, @global, @projects = opts[:all], opts[:global], opts[:project]
+      @projects_given = @projects && !@projects.empty?
     end
         
     # TODO: read in settings from ~/.todo/settings.yaml
     # which may change location of global todo, projects list files etc.
     def init_settings
+    end
+    
+    def init_projects_list
+      unless File.exists?(self.projects_list)
+        FileUtils.mkdir_p File.dirname(self.projects_list)
+        File.open(projects_list,'w', 0644) do |f| 
+          f.write YAML.dump({}) 
+        end
+      end
     end
     
     def reset
@@ -95,18 +110,9 @@ module Todoer
     end
     
     def add_source(key, path=nil)
-      sources[key.to_sym] = path || key
+      sources[key.to_sym] = File.expand_path(path || key.to_s, Dir.pwd)
     end
     
-    # CUT ----------------
-    def load
-      Todoer.reset
-      Todoer.load sources[:global] if sources[:global]
-      project_sources.each do |(key, file)|
-        Todoer.load(file)
-      end
-    end
-    #---------------
     
     def save!
       save_settings!
@@ -118,20 +124,21 @@ module Todoer
     end
     
     def save_sources!
-      dump_projects all_projects.merge(project_sources),
-                    self.class.settings[:projects_list]
+      dump_projects all_projects.merge(project_sources)
     end
     
     private
         
-    def dump_projects(hash, file)
-      File.open(file, 'w+') do |f|
+    def dump_projects(hash)
+      init_projects_list
+      File.open(self.projects_list, 'w') do |f|
         f.write YAML.dump(hash)
       end
     end
     
-    def parse_projects(file)
-      raw = YAML.load_file(file)
+    def parse_projects
+      init_projects_list
+      raw = YAML.load_file(self.projects_list)
       validate raw
       raw.inject({}) {|memo, (k,v)| 
         memo[k.to_sym] = raw[k] 

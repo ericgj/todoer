@@ -7,11 +7,12 @@ module Todoer
       
       def initialize(file, opts={})
         @mode = opts.delete(:mode) || 'r'
-        @file, @opts = file, opts
+        @file, @opts = File.expand_path(file), opts
       end
       
       def log_entries
         return @log_entries if @log_entries
+        init_storage
         @log_entries = []
         File.open(@file, @mode) do |f|
           f.each_line do |line| 
@@ -47,6 +48,15 @@ module Todoer
         end
       end
     
+      private
+      
+      def init_storage
+        unless File.exists?(@file)
+          FileUtils.mkdir_p File.dirname(@file)
+          File.open(@file,'w', 0644) { }
+        end        
+      end
+      
     end
     
   end
