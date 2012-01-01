@@ -45,8 +45,11 @@ module Todoer
       @sources = 
         if @all
           all_projects
-        elsif @project
-          {@project.to_sym => project(@project)}
+        elsif @projects_given
+          @projects.inject({}) do |memo, p|
+            memo[p.to_sym] = project(p)
+            memo
+          end
         else
           {}
         end
@@ -73,7 +76,8 @@ module Todoer
     
     def initialize(opts)
       init_settings
-      @all, @global, @project = opts[:all], opts[:global], opts[:project]
+      @all, @global, @projects, @projects_given = 
+        opts[:all], opts[:global], opts[:project], !opts[:project].empty?
     end
         
     # TODO: read in settings from ~/.todo/settings.yaml

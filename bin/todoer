@@ -1,3 +1,4 @@
+#! /usr/bin/env ruby
 require File.expand_path('../lib/lib_trollop', File.dirname(__FILE__))
 
 require File.expand_path('../lib/todoer', File.dirname(__FILE__))
@@ -5,11 +6,15 @@ require File.expand_path('../lib/todoer/cli', File.dirname(__FILE__))
 
 opts = Trollop.options do 
   opt :global,  'Include global todo', :default => false
-  opt :project, 'Include project todo (path or project name)', 
-      :default => './.todo'
+  opt :project, 'Include project todo(s) (paths or project names)', 
+        :default => './.todo',
+        :multi => true,
+        :type => :string
   opt :all,     'Include global and all project todos', 
-      :default => false
+        :default => false
 end
+
+Todoer.debug opts.inspect
 
 Todoer::CLI.command(ARGV.shift, opts).call
 

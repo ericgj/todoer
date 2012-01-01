@@ -3,3 +3,4 @@
 Gemfile.lock
 .todo
 scratch
+bin/test
