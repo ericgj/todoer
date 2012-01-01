@@ -4,9 +4,23 @@ module Todoer
   
   module Adapters
   
+    ADAPTER_MAP = { 'yaml' => 'yaml',
+                    'yml'  => 'yaml',
+                    'todo' => 'todo'
+                  }
+                  
     def self.get(name)
-      require File.expand_path("adapters/#{name.to_s.downcase}", File.dirname(__FILE__))
-      self.const_get("#{name.to_s.capitalize}")
+      name = name.to_s.downcase
+      self.const_get(ADAPTER_MAP[name].capitalize)
+    rescue NameError
+      require default_adapter_source(name)
+      self.const_get(ADAPTER_MAP[name].capitalize)
+    end
+    
+    def self.default_adapter_source(name)
+      File.expand_path("adapters/#{ADAPTER_MAP[name]}",
+                       File.dirname(__FILE__)
+                      )
     end
     
   end

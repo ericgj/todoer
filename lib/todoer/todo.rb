@@ -75,6 +75,7 @@ module Todoer
     
     def tasks
       return @tasks if @tasks
+      @tasks = []
       log_entries.sort_by(&:logtime).each do |e|
         if e.add?; add_task e.task, e.logtime, e.categories; end
         if e.sub?; sub_task e.task, e.logtime, e.categories; end

@@ -12,9 +12,12 @@ module Todoer
     end
     
     def self.command(cmd, opts)
-      Commands.const_get(cmd.to_s.capitalize).new(environment(opts))
-    rescue NameError
-      raise NameError, "Unknown command '#{cmd}'"
+      begin
+        c = Commands.const_get(cmd.to_s.capitalize)
+      rescue NameError
+        raise NameError, "Unknown command '#{cmd}'"
+      end
+      c.new(environment(opts))
     end
     
     def self.environment(opts)
