@@ -32,24 +32,30 @@ module Todoer
         log_entries.each(&blk)
       end
 
-      def parse(yaml, cats=[])
+      # Note the logtime kludge. This is because the entries are ordered by
+      # logtime when converted to todo entries.
+      # Possibly instead should sort by logtime + entry order?
+      def parse(yaml, cats=[], iter=-1.0)
         validate yaml, cats
+        t = Time.now
         yaml.inject([]) {|memo, (cat, list)|
           (Hash === list ? [list] : list).each do |item|
             case item
             when String
-              memo << Todoer::LogEntry.new_sub(:logtime => Time.now, 
+              iter+=0.01
+              memo << Todoer::LogEntry.new_sub(:logtime => t + iter, 
                                                :categories => cats.to_a + [cat], 
                                                :task => item,
                                                :source => @file
                                               )
-              memo << Todoer::LogEntry.new_add(:logtime => Time.now + 1, 
+              iter+=0.01
+              memo << Todoer::LogEntry.new_add(:logtime => t + iter, 
                                                :categories => cats.to_a + [cat], 
                                                :task => item,
                                                :source => @file
                                               )
             when Hash
-              memo += parse(item, cats.to_a + [cat])
+              memo += parse(item, cats.to_a + [cat], iter)
             end
           end
           memo

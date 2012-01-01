@@ -12,7 +12,7 @@ module Todoer
 <%= 'Showing: ' + ARGV.join(' ') %>
 <%= (["Sources:"] + Todoer.sources).join("\n-  ") %> 
 ---
-<% where[*ARGV].categories.sort.each do |(cats, tasks)| %>
+<% where[*ARGV].categories.each do |(cats, tasks)| %>
 <%= cats.join(' ') %>:
   <% tasks.each do |task| %>
 -  <%= task %>
