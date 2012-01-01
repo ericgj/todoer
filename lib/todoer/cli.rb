@@ -11,7 +11,7 @@ module Todoer
     
     def self.command(cmd, opts)
       Commands.const_get(cmd.to_s.capitalize).new(environment(opts))
-    rescue
+    rescue NameError
       raise ArgumentError, "Command '#{cmd}' not defined"
     end
     

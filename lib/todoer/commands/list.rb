@@ -30,7 +30,7 @@ _____
         end
         
         # Note: define Trollop options here if needed; or simply use ARGV
-        def call(opts={})
+        def call
           # TODO: parse :template option
           tmpl = DEFAULT_TEMPLATE
           ARGV.push '*'

@@ -102,7 +102,7 @@ module Todoer
     end
     
     def next_date_for_day(day)
-      day = day[0].upcase + day[1..-1].downcase
+      day = day[0,1].upcase + day[1..-1].downcase
       if day == 'Today'
         return self.current_date
       elsif day == 'Tomorrow'
