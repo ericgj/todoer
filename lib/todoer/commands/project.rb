@@ -1,13 +1,12 @@
 
-
 module Todoer
   module CLI
     module Commands
     
       class Project
       
+        # note: global commandline options are ignored
         def initialize(env)
-          #@env = env
           @env = Todoer::Environment.blank
         end
         

@@ -11,13 +11,17 @@ module Todoer
         @categories = opts.delete(:categories) || []
         @categories = [@categories] if String === @categories || Symbol === @categories
         @categories.map! {|cat| cat.to_s}
+        @parse_errors = opts.delete(:parse_errors) || :warn
         @file, @opts = file, opts
       end
       
       def log_entries
         return @log_entries if @log_entries
-        yaml = YAML.load_file(@file)
-        @log_entries = parse(yaml, @categories)
+        parsed = catch_parse_error {
+          yaml = YAML.load_file(@file)
+          parse(yaml, @categories)
+        }
+        @log_entries =  parsed || []
       end
       
       def log_entries!
@@ -70,6 +74,26 @@ module Todoer
               [msg, 'at ' + cats.join(', '), "value of key #{i} is not a list"].join(': ')
           end
         end
+      end
+      
+      private
+      
+      def catch_parse_error
+        yield
+      rescue
+        if @parse_errors.respond_to?(:call)
+          @parse_errors.call $!
+        else
+          msg = "Error parsing todo #{@file}\n" +
+                "Underlying error: #{$!}" 
+          case @parse_errors
+          when :error
+            raise
+          when :warn, :break
+            warn msg
+          end
+        end
+        nil        
       end
       
     end

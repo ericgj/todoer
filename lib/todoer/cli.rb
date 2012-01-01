@@ -44,6 +44,8 @@ module Todoer
       
     end
     
+    attr_reader :options
+    
     def global_todo
       File.expand_path(self.class.settings[:global_todo])
     end
@@ -82,6 +84,7 @@ module Todoer
     
     def initialize(opts={})
       init_settings
+      @options = opts.dup
       @all, @global, @projects = opts[:all], opts[:global], opts[:project]
       @projects_given = @projects && !@projects.empty?
     end
