@@ -26,6 +26,11 @@ module Todoer
           @env.save_sources!
         end
         
+        def rm(proj=File.basename(Dir.pwd))
+          @env.rm_source proj
+          @env.save_sources!
+        end
+        
         private
         
         def call_subcommand(cmd, *args)

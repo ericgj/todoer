@@ -113,6 +113,9 @@ module Todoer
       sources[key.to_sym] = File.expand_path(path || key.to_s, Dir.pwd)
     end
     
+    def rm_source(key)
+      removed_sources << key.to_sym
+    end
     
     def save!
       save_settings!
@@ -124,11 +127,15 @@ module Todoer
     end
     
     def save_sources!
-      dump_projects all_projects.merge(project_sources)
+      dump_projects all_projects.merge(project_sources).reject {|(k,v)|
+                      removed_sources.include?(k)
+                    }
     end
     
     private
         
+    def removed_sources; @removed_sources ||= []; end
+    
     def dump_projects(hash)
       init_projects_list
       File.open(self.projects_list, 'w') do |f|
