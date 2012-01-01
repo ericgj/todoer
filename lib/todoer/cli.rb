@@ -68,7 +68,7 @@ module Todoer
     end
     
     def project(proj)
-      all_projects.fetch(proj.to_sym, proj)
+      all_projects.fetch(proj.to_sym, File.expand_path(proj, Dir.pwd))
     end
     
     def initialize(opts)

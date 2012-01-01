@@ -6,7 +6,7 @@ require File.expand_path('../lib/todoer/cli', File.dirname(__FILE__))
 opts = Trollop.options do 
   opt :global,  'Include global todo', :default => false
   opt :project, 'Include project todo (path or project name)', 
-      :default => File.join(Dir.pwd,'.todo')
+      :default => './.todo'
   opt :all,     'Include global and all project todos', 
       :default => false
 end
