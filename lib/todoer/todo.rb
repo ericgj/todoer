@@ -60,11 +60,11 @@ module Todoer
     end
     
     def <<(entry)
-      reset_cache; self.entries << entry
+      reset_cache; log_entries << entry
     end
       
     def push(*new_entries)
-      reset_cache; self.entries.push(*new_entries)
+      reset_cache; log_entries.push(*new_entries)
     end
     
     
@@ -75,7 +75,7 @@ module Todoer
     
     def tasks
       return @tasks if @tasks
-      self.entries.sort_by(&:logtime).each do |e|
+      log_entries.sort_by(&:logtime).each do |e|
         if e.add?; add_task e.task, e.logtime, e.categories; end
         if e.sub?; sub_task e.task, e.logtime, e.categories; end
       end
@@ -114,7 +114,7 @@ module Todoer
     
     private
     
-    def entries; @entries ||= []; end
+    def log_entries; @log_entries ||= []; end
     def reset_cache; @tasks = nil; end
     
     

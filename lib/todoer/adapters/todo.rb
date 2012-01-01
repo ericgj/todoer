@@ -10,28 +10,28 @@ module Todoer
         @file, @opts = file, opts
       end
       
-      def entries
-        return @entries if @entries
-        @entries = []
+      def log_entries
+        return @log_entries if @log_entries
+        @log_entries = []
         File.open(@file, @mode) do |f|
           f.each_line do |line| 
             next if line.chomp.strip.empty?
             if block_given?
               yield(parse(line.chomp))
             else
-              @entries << parse(line.chomp)
+              @log_entries << parse(line.chomp)
             end
           end
         end
-        @entries unless block_given?
+        @log_entries unless block_given?
       end
             
-      def entries!(&blk)  
-        @entries = nil; entries(&blk)
+      def log_entries!(&blk)  
+        @log_entries = nil; log_entries(&blk)
       end
       
       def each(&blk)
-        entries(&blk)
+        log_entries(&blk)
       end
         
       def parse(line)

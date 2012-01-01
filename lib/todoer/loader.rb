@@ -16,14 +16,29 @@ module Todoer
       yield todo
     end
     
+    def load_environment(env)
+      reset
+      load env.sources[:global] if env.sources[:global]
+      env.project_sources.each do |(key, file)|
+        load(file, :categories => key)
+      end      
+    end
+    
     # Options
     #   +adapter+::    name of the adapter for file type
     #   +categories+:: project or categories array for this todo list, if needed by adapter
     # Any other option is adapter-specific
     def load(file, opts={})
-      adapter_for(file, opts.delete(:adapter)).new(file, opts).each do |entry|
+      debug "Loading #{file} #{opts.inspect}"
+      adapter_for(file, opts.delete(:adapter)).tap do |a| 
+        debug "with adapter #{a}"
+      end.new(file, opts).each do |entry|
         self.todo << entry
       end
+    end
+    
+    def reset
+      @todo = nil
     end
     
     def adapter_for(file, adapter=nil)

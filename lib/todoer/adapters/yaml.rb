@@ -9,22 +9,22 @@ module Todoer
       
       def initialize(file, opts={})
         @categories = opts.delete(:categories) || []
-        @categories = [@categories] unless Enumerable === @categories
+        @categories = [@categories] if String === @categories || Symbol === @categories
         @file, @opts = file, opts
       end
       
-      def entries
-        return @entries if @entries
+      def log_entries
+        return @log_entries if @log_entries
         yaml = YAML.load_file(@file)
-        @entries = parse(yaml, @categories)
+        @log_entries = parse(yaml, @categories)
       end
       
-      def entries!
-        @entries = nil; entries
+      def log_entries!
+        @log_entries = nil; log_entries
       end
       
       def each(&blk)
-        entries.each(&blk)
+        log_entries.each(&blk)
       end
 
       def parse(yaml, cats=[])

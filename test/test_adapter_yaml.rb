@@ -257,7 +257,7 @@ end
     
     it "each entry should have prefixed #{label}" do
       $stderr.puts @subject.entries
-      expected_cats = (Enumerable === cats ? cats : [cats])
+      expected_cats = (String === cats ? [cats] : cats)
       @subject.each do |e| 
         assert_equal expected_cats, e.categories[0,expected_cats.count]
       end

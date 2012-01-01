@@ -7,4 +7,9 @@ require File.expand_path('todoer/query_collection',File.dirname(__FILE__))
 require File.expand_path('todoer/presenter', File.dirname(__FILE__))
 
 module Todoer  
+
+  def self.debug(msg)
+    $stderr.puts msg if $DEBUG
+  end
+  
 end
