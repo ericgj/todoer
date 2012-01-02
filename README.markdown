@@ -45,7 +45,7 @@ This gives you a '-' and '+' record:
     - [Tue Sep 20 14:15:38 EDT 2011] personal, start the great american novel
     + [Tue Sep 20 14:15:39 EDT 2011] personal, start the great american novel tomorrow
 
-Of course for total flexibility you could just use sed to edit the file in-place, too.
+Of course for total flexibility (and nerdity) you could just use sed to edit the file in-place, too.
 
 ### Ruby for display
 
