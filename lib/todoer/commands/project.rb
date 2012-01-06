@@ -1,3 +1,4 @@
+require 'yaml'
 
 module Todoer
   module CLI
@@ -5,9 +6,9 @@ module Todoer
     
       class Project
       
-        # note: global commandline options are ignored
+        # note: global commandline options are ignored except for list
         def initialize(env)
-          @env = Todoer::Environment.blank
+          @env = env
         end
         
         def call
@@ -20,7 +21,7 @@ module Todoer
         end
         
         def add(proj=File.basename(Dir.pwd), path='.')
-          path = File.join(path, '.todo') if File.directory?(path)
+          path = File.join(path, File.basename(@env.local_todo)) if File.directory?(path)
           @env.add_source proj, path
           @env.save_sources!
         end
@@ -28,6 +29,10 @@ module Todoer
         def rm(proj=File.basename(Dir.pwd))
           @env.rm_source proj
           @env.save_sources!
+        end
+        
+        def list
+          $stdout.write YAML.dump(@env.sources)
         end
         
         private

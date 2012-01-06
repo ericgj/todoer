@@ -1,3 +1,4 @@
 #! /usr/bin/env bash
-echo "-" \[$(date)\] $@ >> ~/.todo
+todo="~/.todo/.todo"
+echo "-" \[$(date)\] $@ >> "${todo}"
 

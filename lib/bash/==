@@ -10,11 +10,12 @@ while getopts ":a" OPTION
   done
 
 pat="^\+\s\[.+\]\s(.*)($1)(.*)$"
-xx $(  cat ~/.todo | sed -r -n "s/${pat}/\1\2\3/1p" | tail -1 )
+todo="~/.todo/.todo"
+xx $(  cat "${todo}" | sed -r -n "s/${pat}/\1\2\3/1p" | tail -1 )
 if [ "$APPEND" -eq "1" ]
 then
-    ++ $( cat ~/.todo | sed -r -n "s/${pat}/\1\2\3 $2/1p" | tail -1 ) 
+    ++ $( cat "${todo}" | sed -r -n "s/${pat}/\1\2\3 $2/1p" | tail -1 ) 
 else
-  ++ $( cat ~/.todo | sed -r -n "s/${pat}/\1$2\3/1p" | tail -1 )
+  ++ $( cat "${todo}" | sed -r -n "s/${pat}/\1$2\3/1p" | tail -1 )
 fi
 

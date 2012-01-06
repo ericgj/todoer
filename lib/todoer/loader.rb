@@ -20,6 +20,7 @@ module Todoer
     def load_environment(env)
       reset
       load env.sources[:global] if env.sources[:global]
+      load env.sources[:current] if env.sources[:current]
       env.project_sources.each do |(key, file)|
         load(file, :categories => key)
       end      

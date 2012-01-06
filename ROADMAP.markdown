@@ -29,13 +29,14 @@ as well as a dictionary of projects => todo list files, eg. `~/.todo/projects.ya
     todoer list --global  
     
     # current project list, eg. ./.todo 
-    todoer list --project  
+    todoer list --current  
     
-    # default: global list merged with local project list
-    todoer list
-    
-    # global list merged with all registered project lists
+    # all registered project lists
     todoer list --all
+    
+    # default: global list merged with current project list
+    # equivalent to `todoer list --global --current`
+    todoer list
     
     # specific projects
     todoer list --project project1 --project project2    
@@ -48,6 +49,13 @@ as well as a dictionary of projects => todo list files, eg. `~/.todo/projects.ya
     
     # remove project reference
     todoer project rm project1      
+    
+    # list projects
+    todoer project list --all
+    
+    # note this loads same environment as `todoer list` command,
+    # so the following would list global + current lists:
+    todoer project list
     
     # create local ./.todo file, reference project using name of folder as default
     todoer init .                       
